@@ -1,3 +1,5 @@
+import drop from './dom';
+
 type Player = 'player1' | 'player2';
 
 function CreateShip(length: number) {
@@ -64,7 +66,10 @@ function CreateGameBoard(name: Player) {
 }
 
 const player1 = CreateGameBoard('player1');
-const player2 = CreateGameBoard('player2');
+// const player2 = CreateGameBoard('player2');
+console.log(player1);
 document
   .querySelectorAll('.grid')
   .forEach((grid) => grid.addEventListener('click', (e) => getCoordinates(e, 5)));
+
+drop();
