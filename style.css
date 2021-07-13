@@ -1,0 +1,68 @@
+body,
+html {
+  margin: 0 auto;
+  height: 100%;
+  background-color: gray;
+  color: white;
+  background-color: rgb(20, 20, 49);
+}
+
+.flex {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+.life {
+  float: left;
+  padding: 0 !important;
+  margin: 20px 50px;
+}
+
+.textCenter {
+  text-align: center;
+}
+
+.gameBoard,
+.mainBoard {
+  height: 600px;
+}
+
+.gameBoard {
+  padding: 0 100px;
+}
+
+.mainBoard {
+  display: grid;
+  color: white;
+  background-color: rgb(55, 84, 179);
+  grid-template-columns: repeat(10, 50px);
+  grid-template-rows: repeat(10, 50px);
+}
+
+.grid {
+  border: 1px solid white;
+  text-align: center;
+  line-height: 50px;
+}
+
+#content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-bottom: 100px;
+  background-size: cover;
+}
+
+#gameName {
+  padding-top: 50px;
+  font-size: 3rem;
+}
+
+#UI,
+.life {
+  padding: 50px 50px;
+  font-size: 2rem;
+  height: 50px;
+}
