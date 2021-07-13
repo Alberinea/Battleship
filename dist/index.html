@@ -20,7 +20,7 @@
             <li class="life"></li>
             <li class="life"></li>
           </ul>
-          <div id="playerBoard" class="mainBoard">
+          <div id="player1Board" class="mainBoard">
             <div class="grid"></div>
             <div class="grid"></div>
             <div class="grid"></div>
@@ -124,7 +124,7 @@
           </div>
           <h3 id="playerName" class="name">Player 1</h3>
         </div>
-        <div class="gameBoard flex">
+        <div class="gameBoard flex none">
           <ul id="player2SunkShip" class="sunkShip">
             <li class="life"></li>
             <li class="life"></li>
@@ -235,6 +235,14 @@
             <div class="grid"></div>
           </div>
           <h3 id="player2Name" class="name">Player 2</h3>
+        </div>
+        <div id="shipContainer">
+          <div class="warship carrier" draggable="true"></div>
+          <div class="warship battleship" draggable="true"></div>
+          <div class="warship cruiser" draggable="true"></div>
+          <div class="warship submarine" draggable="true"></div>
+          <div class="warship destroyer" draggable="true"></div>
+          <button>Rotate</button>
         </div>
       </div>
     </main>
