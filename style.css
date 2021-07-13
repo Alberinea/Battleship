@@ -54,10 +54,6 @@ button {
   line-height: 50px;
 }
 
-.placed {
-  background-color: rgb(147, 156, 180);
-}
-
 .none {
   display: none;
 }
@@ -65,7 +61,6 @@ button {
 .warship {
   height: 50px;
   border-radius: 30px;
-  margin: 10px;
 }
 
 .carrier {
