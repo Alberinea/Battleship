@@ -1,93 +1,11 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	"use strict";
-/******/ 	var __webpack_modules__ = ({
-
-/***/ "./src/dom.ts":
-/*!********************!*\
-  !*** ./src/dom.ts ***!
-  \********************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
-/* harmony export */ });
-var warships = document.querySelectorAll('.warship');
-var playerBoard = document.querySelector('.mainBoard');
-function drop() {
-    warships.forEach(function (warship) {
-        return warship.addEventListener('dragstart', function (e) {
-            e.dataTransfer.setData('text', e.target.className);
-        });
-    });
-    warships.forEach(function (warship) {
-        return warship.addEventListener('dragend', function (e) {
-            e.target.style.display = 'none';
-        });
-    });
-    playerBoard.addEventListener('drop', function (e) {
-        var data = e.dataTransfer.getData('text');
-        e.target.className += " " + data;
-    });
-    playerBoard.addEventListener('dragover', function (e) { return e.preventDefault(); });
-}
-/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (drop);
-
-
-/***/ })
-
-/******/ 	});
-/************************************************************************/
-/******/ 	// The module cache
-/******/ 	var __webpack_module_cache__ = {};
-/******/ 	
-/******/ 	// The require function
-/******/ 	function __webpack_require__(moduleId) {
-/******/ 		// Check if module is in cache
-/******/ 		var cachedModule = __webpack_module_cache__[moduleId];
-/******/ 		if (cachedModule !== undefined) {
-/******/ 			return cachedModule.exports;
-/******/ 		}
-/******/ 		// Create a new module (and put it into the cache)
-/******/ 		var module = __webpack_module_cache__[moduleId] = {
-/******/ 			// no module.id needed
-/******/ 			// no module.loaded needed
-/******/ 			exports: {}
-/******/ 		};
-/******/ 	
-/******/ 		// Execute the module function
-/******/ 		__webpack_modules__[moduleId](module, module.exports, __webpack_require__);
-/******/ 	
-/******/ 		// Return the exports of the module
-/******/ 		return module.exports;
-/******/ 	}
-/******/ 	
-/************************************************************************/
-/******/ 	/* webpack/runtime/define property getters */
-/******/ 	(() => {
-/******/ 		// define getter functions for harmony exports
-/******/ 		__webpack_require__.d = (exports, definition) => {
-/******/ 			for(var key in definition) {
-/******/ 				if(__webpack_require__.o(definition, key) && !__webpack_require__.o(exports, key)) {
-/******/ 					Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
-/******/ 				}
-/******/ 			}
-/******/ 		};
-/******/ 	})();
-/******/ 	
-/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
-/******/ 	(() => {
-/******/ 		__webpack_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
-/******/ 	})();
-/******/ 	
-/************************************************************************/
 var __webpack_exports__ = {};
-// This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
-(() => {
 /*!**********************!*\
   !*** ./src/index.ts ***!
   \**********************/
-/* harmony import */ var _dom__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./dom */ "./src/dom.ts");
 
+var shipID = "";
 function CreateShip(length) {
     var HP = [];
     var hitCount = 0;
@@ -96,6 +14,9 @@ function CreateShip(length) {
     }
     return {
         HP: HP,
+        getLength: function () {
+            return length;
+        },
         getHitCount: function () {
             return hitCount;
         },
@@ -112,22 +33,34 @@ function CreateShip(length) {
         },
     };
 }
-function getCoordinates(e, length) {
+function getCoordinates(id, length) {
     var coordinates = [];
     for (var i = 0; i < length; i += 1) {
-        coordinates.push(parseInt(e.target.id, 10) + i);
+        coordinates.push(parseInt(id, 10) + i);
     }
     return coordinates;
 }
 function printID() {
-    var grids = document.querySelectorAll('.grid');
+    var grids = document.querySelectorAll(".grid");
     for (var i = 0; i < grids.length; i += 1) {
         grids[i].id = "" + i;
     }
 }
+function checkReady() {
+    var container = document.getElementById("shipContainer");
+    var ships = container === null || container === void 0 ? void 0 : container.querySelectorAll(".warship");
+    var arr = Array.prototype.slice.call(ships);
+    if (arr.every(function (_a) {
+        var display = _a.style.display;
+        return display === "none";
+    }))
+        return true;
+    return false;
+}
 function CreateGameBoard(name) {
     printID();
-    var board = Array.from(Array(100).keys());
+    var leftSide = Array.from(Array(100).keys());
+    var board = name === "player2" ? leftSide.map(function (grid) { return grid + 100; }) : leftSide;
     var fleet = {
         carrier: CreateShip(5),
         battleship: CreateShip(4),
@@ -139,9 +72,11 @@ function CreateGameBoard(name) {
         name: name,
         fleet: fleet,
         board: board,
-        // placeFleet(warships: {}, playerBoard: [], coordinates: number[]) {
-        //   fleet.battleship.HP
-        // },
+        placeFleet: function (coordinates) {
+            for (var i = coordinates[0]; i < coordinates[coordinates.length - 1] + 1; i += 1) {
+                board[i] = -1;
+            }
+        },
         receiveAttack: function () { },
         checkGameOver: function () {
             if (Object.values(fleet).every(function (_a) {
@@ -153,15 +88,56 @@ function CreateGameBoard(name) {
         },
     };
 }
-var player1 = CreateGameBoard('player1');
+var player1 = CreateGameBoard("player1");
 // const player2 = CreateGameBoard('player2');
-console.log(player1);
-document
-    .querySelectorAll('.grid')
-    .forEach(function (grid) { return grid.addEventListener('click', function (e) { return getCoordinates(e, 5); }); });
-(0,_dom__WEBPACK_IMPORTED_MODULE_0__.default)();
-
-})();
+// function takeTurn({ name }: { name: Player }) {
+//   console.log(name);
+// }
+function gameStart() {
+    if (!checkReady())
+        return;
+    var shipContainer = document.getElementById("shipContainer");
+    var player2Board = document.getElementById("player2Board");
+    if (!shipContainer || !player2Board)
+        return;
+    shipContainer.style.display = "none";
+    player2Board.style.display = "flex";
+}
+var warships = document.querySelectorAll(".warship");
+var playerBoard = document.querySelector(".mainBoard");
+function dragstart(e) {
+    var _a;
+    var target = e.target;
+    shipID = target.id;
+    (_a = e.dataTransfer) === null || _a === void 0 ? void 0 : _a.setData("text", target === null || target === void 0 ? void 0 : target.className);
+}
+function dragend(e) {
+    var target = e.target;
+    target.style.display = "none";
+}
+function drop(e) {
+    var _a;
+    var target = e.target;
+    var data = (_a = e.dataTransfer) === null || _a === void 0 ? void 0 : _a.getData("text");
+    target.className += " " + data;
+    return target.id;
+}
+function addListeners() {
+    warships.forEach(function (warship) {
+        return warship.addEventListener("dragstart", dragstart);
+    });
+    playerBoard === null || playerBoard === void 0 ? void 0 : playerBoard.addEventListener("dragover", function (e) { return e.preventDefault(); });
+    playerBoard === null || playerBoard === void 0 ? void 0 : playerBoard.addEventListener("drop", function (e) {
+        player1.placeFleet(getCoordinates(drop(e), player1.fleet[shipID].getLength()));
+    });
+    warships.forEach(function (warship) {
+        return warship.addEventListener("dragend", function (e) {
+            dragend(e);
+            gameStart();
+        });
+    });
+}
+addListeners();
 
 /******/ })()
 ;
