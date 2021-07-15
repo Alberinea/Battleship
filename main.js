@@ -1,34 +1,42 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	"use strict";
-var __webpack_exports__ = {};
+/******/ 	var __webpack_modules__ = ({
+
+/***/ "./src/index.ts":
 /*!**********************!*\
   !*** ./src/index.ts ***!
   \**********************/
+/***/ (function() {
 
+
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
 var container = document.getElementById("shipContainer");
 var rotated = false;
-function CreateShip(length) {
-    var HP = [];
-    var hitCount = 0;
-    for (var i = 1; i < length + 1; i += 1) {
-        HP.push(i);
-    }
+function CreateShip(length, shipName) {
+    var HP = length;
+    var name = shipName;
     return {
-        HP: HP,
-        getLength: function () {
-            return length;
+        getName: function () {
+            return name;
         },
-        getHitCount: function () {
-            return hitCount;
+        getHP: function () {
+            return HP;
         },
-        hit: function (hit) {
-            if (hitCount === length)
-                return;
-            HP[hit] = 0;
-            hitCount += 1;
+        hit: function () {
+            HP -= 1;
         },
         isSunk: function () {
-            if (!HP.some(function (hit) { return hit > 1; }))
+            if (HP <= 0)
                 return true;
             return false;
         },
@@ -36,8 +44,16 @@ function CreateShip(length) {
 }
 function getCoordinates(id, length) {
     var coordinates = [];
-    for (var i = 0; i < length; i += 1) {
-        coordinates.push(parseInt(id, 10) + i);
+    var spot = parseInt(id, 10);
+    if (!rotated) {
+        for (var i = 0; i < length; i += 1) {
+            coordinates.push(spot + i);
+        }
+    }
+    if (rotated) {
+        for (var i = spot; i < spot + length * 10; i += 10) {
+            coordinates.push(i);
+        }
     }
     return coordinates;
 }
@@ -50,23 +66,21 @@ function printID() {
 function checkReady() {
     var ships = container === null || container === void 0 ? void 0 : container.querySelectorAll(".warship");
     var arr = Array.prototype.slice.call(ships);
-    if (arr.every(function (_a) {
-        var display = _a.style.display;
-        return display === "none";
-    }))
+    if (arr.every(function (ship) { return ship.style.display === "none"; }))
         return true;
     return false;
 }
 function CreateGameBoard(name) {
     printID();
     var leftSide = Array.from(Array(100).keys());
-    var board = name === "player2" ? leftSide.map(function (grid) { return grid + 100; }) : leftSide;
+    var boardInt = name === "player2" ? leftSide.map(function (grid) { return grid + 100; }) : leftSide;
+    var board = boardInt.map(function (arg) { return arg.toString(); });
     var fleet = {
-        carrier: CreateShip(5),
-        battleship: CreateShip(4),
-        cruiser: CreateShip(3),
-        submarine: CreateShip(3),
-        destroyer: CreateShip(2),
+        carrier: CreateShip(5, "carrier"),
+        battleship: CreateShip(4, "battleship"),
+        cruiser: CreateShip(3, "cruiser"),
+        submarine: CreateShip(3, "submarine"),
+        destroyer: CreateShip(2, "destroyer"),
     };
     var fleetPlaced = [];
     return {
@@ -74,25 +88,18 @@ function CreateGameBoard(name) {
         fleet: fleet,
         fleetPlaced: fleetPlaced,
         board: board,
-        placeFleet: function (coordinates) {
+        placeFleet: function (coordinates, shipName) {
             var count = 10 * coordinates.length;
             if (!rotated &&
                 coordinates.some(function (co) { return co % 10 === 0 && co !== coordinates[0]; }))
                 return false;
             if (rotated && coordinates[0] + count - 10 > 100)
                 return false;
-            if (board[coordinates[0]] === -1)
+            if (coordinates.some(function (co) { return Number.isNaN(parseInt(board[co], 10)); }))
                 return false;
-            if (!rotated) {
-                for (var i = coordinates[0]; i < coordinates[coordinates.length - 1] + 1; i += 1) {
-                    board[i] = -1;
-                }
-            }
-            if (rotated) {
-                for (var i = coordinates[0]; i < coordinates[0] + count; i += 10) {
-                    board[i] = -1;
-                }
-            }
+            coordinates.forEach(function (co) {
+                board[co] = shipName;
+            });
             fleetPlaced.push(coordinates.length);
             return true;
         },
@@ -129,23 +136,15 @@ function rotateShip() {
     });
 }
 function placeFleetRandom(player) {
-    var ships = [
-        player.fleet.carrier.getLength(),
-        player.fleet.battleship.getLength(),
-        player.fleet.cruiser.getLength(),
-        player.fleet.submarine.getLength(),
-        player.fleet.destroyer.getLength(),
-    ];
+    var fleet = __assign({}, player.fleet);
     while (player.fleetPlaced.length !== 5) {
-        var coordinates = [];
+        var first = Object.values(fleet)[0];
         var random = Math.floor(Math.random() * 100);
         if (random < 51)
             rotated = true;
-        for (var i = 0; i < ships[0]; i += 1) {
-            coordinates.push(random + i);
+        if (player.placeFleet(getCoordinates(random.toString(), first.getHP()), first.getName())) {
+            delete fleet[Object.keys(fleet)[0]];
         }
-        if (player.placeFleet(coordinates))
-            ships.splice(0, 1);
         rotated = false;
     }
 }
@@ -165,25 +164,60 @@ function markAttack(id, player, grid) {
     if (!gridAttackedDOM)
         return;
     gridAttackedDOM.innerText = "•";
-    gridAttackedDOM.style.color = player.board[grid] === -3 ? "red" : "white";
+    gridAttackedDOM.style.color = Number.isNaN(parseInt(player.board[grid], 10))
+        ? "red"
+        : "white";
+}
+function changeLife(isSunk, _a) {
+    var _b;
+    var name = _a.name;
+    var life = ((_b = document.getElementById(name + "SunkShip")) === null || _b === void 0 ? void 0 : _b.firstElementChild);
+    while ((life === null || life === void 0 ? void 0 : life.style.color) === "red")
+        life = life === null || life === void 0 ? void 0 : life.nextElementSibling;
+    if (isSunk) {
+        life.style.color = "red";
+    }
+}
+function checkSunk(player, shipName) {
+    if (player.fleet[shipName].isSunk())
+        return true;
+    return false;
+}
+function checkHit(player, grid) {
+    if (Number.isNaN(parseInt(player.board[grid], 10))) {
+        player.fleet[player.board[grid]].hit();
+        changeLife(checkSunk(player, player.board[grid]), player);
+        player.board[grid] = "-3";
+    }
+    else {
+        player.board[grid] = "-2";
+    }
 }
 function takeTurn(player, coordinate) {
     var _a;
     if (((_a = document.getElementById(coordinate)) === null || _a === void 0 ? void 0 : _a.innerText) === "•")
         return false;
     var enemy = player.name === "player1" ? player2 : player1;
-    var grid = parseInt(coordinate, 10);
-    enemy.board[grid] = enemy.board[grid] === -1 ? -3 : -2;
+    var grid = player.name === "player1"
+        ? parseInt(coordinate, 10) - 100
+        : parseInt(coordinate, 10);
     markAttack(coordinate, enemy, grid);
+    checkHit(enemy, grid);
+    console.log(player.board);
     return true;
 }
 function convertEvent(e) {
     var target = e.target;
-    return target.id;
+    var coordinates = parseInt(target.id, 10);
+    return coordinates.toString();
+}
+function AIPlay() {
+    var random = Math.floor(Math.random() * 100).toString();
+    return random;
 }
 function playGame(e) {
     if (takeTurn(player1, convertEvent(e)))
-        takeTurn(player2, Math.floor(Math.random() * 100).toString());
+        takeTurn(player2, AIPlay());
 }
 var shipID = "";
 var currentPosition = "";
@@ -220,14 +254,13 @@ function addListeners() {
     });
     playerBoard === null || playerBoard === void 0 ? void 0 : playerBoard.addEventListener("dragover", function (e) { return e.preventDefault(); });
     playerBoard === null || playerBoard === void 0 ? void 0 : playerBoard.addEventListener("drop", function (e) {
-        var _a, _b;
+        var _a;
         var target = e.target;
-        var move = player1.placeFleet(getCoordinates(target.id, (_a = player1.fleet[shipID]) === null || _a === void 0 ? void 0 : _a.getLength()));
+        var move = player1.placeFleet(getCoordinates(target.id, (_a = player1.fleet[shipID]) === null || _a === void 0 ? void 0 : _a.getHP()), shipID);
         if (!move) {
             validMove = false;
             return;
         }
-        player1.placeFleet(getCoordinates(target.id, (_b = player1.fleet[shipID]) === null || _b === void 0 ? void 0 : _b.getLength()));
         dropShip(e);
         validMove = true;
     });
@@ -246,6 +279,18 @@ function addListeners() {
 }
 addListeners();
 
+
+/***/ })
+
+/******/ 	});
+/************************************************************************/
+/******/ 	
+/******/ 	// startup
+/******/ 	// Load entry module and return exports
+/******/ 	// This entry module is referenced by other modules so it can't be inlined
+/******/ 	var __webpack_exports__ = {};
+/******/ 	__webpack_modules__["./src/index.ts"]();
+/******/ 	
 /******/ })()
 ;
 //# sourceMappingURL=main.js.map
