@@ -14,6 +14,15 @@ button {
   margin: 20px;
 }
 
+ul {
+  padding-right: 35px;
+  list-style: none;
+}
+
+li:before {
+  content: "♥";
+}
+
 .flex {
   display: flex;
   justify-content: center;
@@ -24,7 +33,8 @@ button {
 .life {
   float: left;
   padding: 0 !important;
-  margin: 20px 50px;
+  margin: 20px 20px;
+  color: red;
 }
 
 .textCenter {
