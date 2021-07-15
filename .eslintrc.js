@@ -11,7 +11,9 @@ module.exports = {
     },
     project: "./tsconfig.json",
   },
-
+  rules: {
+    "@typescript-eslint/no-explicit-any": "off",
+  },
   env: {
     es6: true,
   },

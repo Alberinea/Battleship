@@ -78,11 +78,8 @@ function CreateGameBoard(name: Player) {
       )
         return false;
       if (rotated && coordinates[0] + count - 10 > 100) return false;
-      if (
-        board[coordinates[0]] === -1 ||
-        board[coordinates[coordinates.length - 1]] === -1
-      )
-        return false;
+      if (board[coordinates[0]] === -1) return false;
+
       if (!rotated) {
         for (
           let i = coordinates[0];
@@ -98,7 +95,6 @@ function CreateGameBoard(name: Player) {
         }
       }
       fleetPlaced.push(coordinates.length);
-      console.log(board);
       return true;
     },
     checkGameOver(): boolean {
@@ -130,9 +126,18 @@ function rotateShip() {
   });
 }
 
-function placeFleetRandom(player: Record<string, unknown>) {
-  console.log(player.board);
-  console.log(player.fleet);
+function placeFleetRandom(player: any) {
+  const ships = [5, 4, 3, 3, 2];
+  while (player.fleetPlaced.length !== 5) {
+    const coordinates = [];
+    const random = Math.floor(Math.random() * 100);
+    if (random < 51) rotated = true;
+    for (let i = 0; i < ships[0]; i += 1) {
+      coordinates.push(random + i);
+    }
+    if (player.placeFleet(coordinates)) ships.splice(0, 1);
+    rotated = false;
+  }
 }
 
 function gameStart() {
