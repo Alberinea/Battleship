@@ -4,27 +4,21 @@ const container = document.getElementById("shipContainer");
 
 let rotated = false;
 
-function CreateShip(length: number) {
-  const HP: number[] = [];
-  let hitCount = 0;
-  for (let i = 1; i < length + 1; i += 1) {
-    HP.push(i);
-  }
+function CreateShip(length: number, shipName: string) {
+  let HP = length;
+  const name = shipName;
   return {
-    HP,
-    getLength(): number {
-      return length;
+    getName(): string {
+      return name;
     },
-    getHitCount(): number {
-      return hitCount;
+    getHP(): number {
+      return HP;
     },
-    hit(hit: number): void {
-      if (hitCount === length) return;
-      HP[hit] = 0;
-      hitCount += 1;
+    hit(): void {
+      HP -= 1;
     },
     isSunk(): boolean {
-      if (!HP.some((hit) => hit > 1)) return true;
+      if (HP <= 0) return true;
       return false;
     },
   };
@@ -32,8 +26,16 @@ function CreateShip(length: number) {
 
 function getCoordinates(id: string, length: number) {
   const coordinates = [];
-  for (let i = 0; i < length; i += 1) {
-    coordinates.push(parseInt(id, 10) + i);
+  const spot = parseInt(id, 10);
+  if (!rotated) {
+    for (let i = 0; i < length; i += 1) {
+      coordinates.push(spot + i);
+    }
+  }
+  if (rotated) {
+    for (let i = spot; i < spot + length * 10; i += 10) {
+      coordinates.push(i);
+    }
   }
   return coordinates;
 }
@@ -48,21 +50,23 @@ function printID(): void {
 function checkReady() {
   const ships = container?.querySelectorAll(".warship");
   const arr = Array.prototype.slice.call(ships);
-  if (arr.every(({ style: { display } }) => display === "none")) return true;
+  if (arr.every((ship: HTMLElement) => ship.style.display === "none"))
+    return true;
   return false;
 }
 
 function CreateGameBoard(name: Player) {
   printID();
   const leftSide = Array.from(Array(100).keys());
-  const board =
+  const boardInt =
     name === "player2" ? leftSide.map((grid) => grid + 100) : leftSide;
+  const board = boardInt.map((arg) => arg.toString());
   const fleet = {
-    carrier: CreateShip(5),
-    battleship: CreateShip(4),
-    cruiser: CreateShip(3),
-    submarine: CreateShip(3),
-    destroyer: CreateShip(2),
+    carrier: CreateShip(5, "carrier"),
+    battleship: CreateShip(4, "battleship"),
+    cruiser: CreateShip(3, "cruiser"),
+    submarine: CreateShip(3, "submarine"),
+    destroyer: CreateShip(2, "destroyer"),
   };
   const fleetPlaced: number[] = [];
   return {
@@ -70,7 +74,7 @@ function CreateGameBoard(name: Player) {
     fleet,
     fleetPlaced,
     board,
-    placeFleet(coordinates: number[]): boolean {
+    placeFleet(coordinates: number[], shipName: string): boolean {
       const count = 10 * coordinates.length;
       if (
         !rotated &&
@@ -78,22 +82,13 @@ function CreateGameBoard(name: Player) {
       )
         return false;
       if (rotated && coordinates[0] + count - 10 > 100) return false;
-      if (board[coordinates[0]] === -1) return false;
 
-      if (!rotated) {
-        for (
-          let i = coordinates[0];
-          i < coordinates[coordinates.length - 1] + 1;
-          i += 1
-        ) {
-          board[i] = -1;
-        }
-      }
-      if (rotated) {
-        for (let i = coordinates[0]; i < coordinates[0] + count; i += 10) {
-          board[i] = -1;
-        }
-      }
+      if (coordinates.some((co) => Number.isNaN(parseInt(board[co], 10))))
+        return false;
+
+      coordinates.forEach((co) => {
+        board[co] = shipName;
+      });
       fleetPlaced.push(coordinates.length);
       return true;
     },
@@ -127,21 +122,19 @@ function rotateShip() {
 }
 
 function placeFleetRandom(player: any) {
-  const ships = [
-    player.fleet.carrier.getLength(),
-    player.fleet.battleship.getLength(),
-    player.fleet.cruiser.getLength(),
-    player.fleet.submarine.getLength(),
-    player.fleet.destroyer.getLength(),
-  ];
+  const fleet = { ...player.fleet };
   while (player.fleetPlaced.length !== 5) {
-    const coordinates = [];
+    const first: any = Object.values(fleet)[0];
     const random = Math.floor(Math.random() * 100);
     if (random < 51) rotated = true;
-    for (let i = 0; i < ships[0]; i += 1) {
-      coordinates.push(random + i);
+    if (
+      player.placeFleet(
+        getCoordinates(random.toString(), first.getHP()),
+        first.getName()
+      )
+    ) {
+      delete fleet[Object.keys(fleet)[0]];
     }
-    if (player.placeFleet(coordinates)) ships.splice(0, 1);
     rotated = false;
   }
 }
@@ -160,7 +153,35 @@ function markAttack(id: string, player: any, grid: number) {
   const gridAttackedDOM = document.getElementById(id);
   if (!gridAttackedDOM) return;
   gridAttackedDOM.innerText = "•";
-  gridAttackedDOM.style.color = player.board[grid] === -3 ? "red" : "white";
+  gridAttackedDOM.style.color = Number.isNaN(parseInt(player.board[grid], 10))
+    ? "red"
+    : "white";
+}
+
+function changeLife(isSunk: boolean, { name }: { name: string }) {
+  let life = <HTMLElement>(
+    document.getElementById(`${name}SunkShip`)?.firstElementChild
+  );
+  while (life?.style.color === "red")
+    life = <HTMLElement>life?.nextElementSibling;
+  if (isSunk) {
+    life.style.color = "red";
+  }
+}
+
+function checkSunk(player: any, shipName: string): boolean {
+  if (player.fleet[shipName].isSunk()) return true;
+  return false;
+}
+
+function checkHit(player: any, grid: number) {
+  if (Number.isNaN(parseInt(player.board[grid], 10))) {
+    player.fleet[player.board[grid]].hit();
+    changeLife(checkSunk(player, player.board[grid]), player);
+    player.board[grid] = "-3";
+  } else {
+    player.board[grid] = "-2";
+  }
 }
 
 function takeTurn(
@@ -169,20 +190,29 @@ function takeTurn(
 ): boolean {
   if (document.getElementById(coordinate)?.innerText === "•") return false;
   const enemy = player.name === "player1" ? player2 : player1;
-  const grid = parseInt(coordinate, 10);
-  enemy.board[grid] = enemy.board[grid] === -1 ? -3 : -2;
+  const grid =
+    player.name === "player1"
+      ? parseInt(coordinate, 10) - 100
+      : parseInt(coordinate, 10);
   markAttack(coordinate, enemy, grid);
+  checkHit(enemy, grid);
+  console.log(player.board);
   return true;
 }
 
 function convertEvent(e: Event) {
   const target = e.target as HTMLElement;
-  return target.id;
+  const coordinates = parseInt(target.id, 10);
+  return coordinates.toString();
+}
+
+function AIPlay() {
+  const random = Math.floor(Math.random() * 100).toString();
+  return random;
 }
 
 function playGame(e: Event) {
-  if (takeTurn(player1, convertEvent(e)))
-    takeTurn(player2, Math.floor(Math.random() * 100).toString());
+  if (takeTurn(player1, convertEvent(e))) takeTurn(player2, AIPlay());
 }
 
 let shipID = "";
@@ -225,15 +255,13 @@ function addListeners(): void {
   playerBoard?.addEventListener("drop", (e) => {
     const target = e.target as HTMLElement;
     const move = player1.placeFleet(
-      getCoordinates(target.id, player1.fleet[shipID]?.getLength())
+      getCoordinates(target.id, player1.fleet[shipID]?.getHP()),
+      shipID
     );
     if (!move) {
       validMove = false;
       return;
     }
-    player1.placeFleet(
-      getCoordinates(target.id, player1.fleet[shipID]?.getLength())
-    );
     dropShip(e);
     validMove = true;
   });
