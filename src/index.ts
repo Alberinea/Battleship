@@ -127,7 +127,13 @@ function rotateShip() {
 }
 
 function placeFleetRandom(player: any) {
-  const ships = [5, 4, 3, 3, 2];
+  const ships = [
+    player.fleet.carrier.getLength(),
+    player.fleet.battleship.getLength(),
+    player.fleet.cruiser.getLength(),
+    player.fleet.submarine.getLength(),
+    player.fleet.destroyer.getLength(),
+  ];
   while (player.fleetPlaced.length !== 5) {
     const coordinates = [];
     const random = Math.floor(Math.random() * 100);
@@ -150,24 +156,33 @@ function gameStart() {
   placeFleetRandom(player2);
 }
 
-function markAttack(id: string) {
+function markAttack(id: string, player: any, grid: number) {
   const gridAttackedDOM = document.getElementById(id);
   if (!gridAttackedDOM) return;
   gridAttackedDOM.innerText = "•";
-  gridAttackedDOM.dataset.id = id;
-  gridAttackedDOM.style.color =
-    gridAttackedDOM.dataset.id === "-3" ? "red" : "white";
+  gridAttackedDOM.style.color = player.board[grid] === -3 ? "red" : "white";
 }
 
-function takeTurn(player: Record<string, unknown>, e: Event) {
-  if (!checkReady()) return;
-  const target = e.target as HTMLElement;
+function takeTurn(
+  player: Record<string, unknown>,
+  coordinate: string
+): boolean {
+  if (document.getElementById(coordinate)?.innerText === "•") return false;
   const enemy = player.name === "player1" ? player2 : player1;
-  const gridAttacked = enemy.board.findIndex(
-    (arg) => arg === parseInt(target.id, 10)
-  );
-  enemy.board[gridAttacked] = enemy.board[gridAttacked] === -1 ? -3 : -2;
-  markAttack(target.id);
+  const grid = parseInt(coordinate, 10);
+  enemy.board[grid] = enemy.board[grid] === -1 ? -3 : -2;
+  markAttack(coordinate, enemy, grid);
+  return true;
+}
+
+function convertEvent(e: Event) {
+  const target = e.target as HTMLElement;
+  return target.id;
+}
+
+function playGame(e: Event) {
+  if (takeTurn(player1, convertEvent(e)))
+    takeTurn(player2, Math.floor(Math.random() * 100).toString());
 }
 
 let shipID = "";
@@ -230,7 +245,7 @@ function addListeners(): void {
     })
   );
   AIGrids?.forEach((grid) =>
-    grid.addEventListener("click", (e) => takeTurn(player1, e))
+    grid.addEventListener("click", (e) => playGame(e))
   );
   rotateButton?.addEventListener("click", rotateShip);
 }

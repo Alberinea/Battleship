@@ -129,7 +129,13 @@ function rotateShip() {
     });
 }
 function placeFleetRandom(player) {
-    var ships = [5, 4, 3, 3, 2];
+    var ships = [
+        player.fleet.carrier.getLength(),
+        player.fleet.battleship.getLength(),
+        player.fleet.cruiser.getLength(),
+        player.fleet.submarine.getLength(),
+        player.fleet.destroyer.getLength(),
+    ];
     while (player.fleetPlaced.length !== 5) {
         var coordinates = [];
         var random = Math.floor(Math.random() * 100);
@@ -154,23 +160,30 @@ function gameStart() {
     player2Board.style.display = "flex";
     placeFleetRandom(player2);
 }
-function markAttack(id) {
+function markAttack(id, player, grid) {
     var gridAttackedDOM = document.getElementById(id);
     if (!gridAttackedDOM)
         return;
     gridAttackedDOM.innerText = "•";
-    gridAttackedDOM.dataset.id = id;
-    gridAttackedDOM.style.color =
-        gridAttackedDOM.dataset.id === "-3" ? "red" : "white";
+    gridAttackedDOM.style.color = player.board[grid] === -3 ? "red" : "white";
 }
-function takeTurn(player, e) {
-    if (!checkReady())
-        return;
-    var target = e.target;
+function takeTurn(player, coordinate) {
+    var _a;
+    if (((_a = document.getElementById(coordinate)) === null || _a === void 0 ? void 0 : _a.innerText) === "•")
+        return false;
     var enemy = player.name === "player1" ? player2 : player1;
-    var gridAttacked = enemy.board.findIndex(function (arg) { return arg === parseInt(target.id, 10); });
-    enemy.board[gridAttacked] = enemy.board[gridAttacked] === -1 ? -3 : -2;
-    markAttack(target.id);
+    var grid = parseInt(coordinate, 10);
+    enemy.board[grid] = enemy.board[grid] === -1 ? -3 : -2;
+    markAttack(coordinate, enemy, grid);
+    return true;
+}
+function convertEvent(e) {
+    var target = e.target;
+    return target.id;
+}
+function playGame(e) {
+    if (takeTurn(player1, convertEvent(e)))
+        takeTurn(player2, Math.floor(Math.random() * 100).toString());
 }
 var shipID = "";
 var currentPosition = "";
@@ -227,7 +240,7 @@ function addListeners() {
         });
     });
     AIGrids === null || AIGrids === void 0 ? void 0 : AIGrids.forEach(function (grid) {
-        return grid.addEventListener("click", function (e) { return takeTurn(player1, e); });
+        return grid.addEventListener("click", function (e) { return playGame(e); });
     });
     rotateButton === null || rotateButton === void 0 ? void 0 : rotateButton.addEventListener("click", rotateShip);
 }
