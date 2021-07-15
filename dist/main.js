@@ -57,6 +57,10 @@ function getCoordinates(id, length) {
     }
     return coordinates;
 }
+function changeUI(text) {
+    var UI = document.querySelector("h2");
+    UI.innerText = text;
+}
 function printID() {
     var grids = document.querySelectorAll(".grid");
     for (var i = 0; i < grids.length; i += 1) {
@@ -103,7 +107,7 @@ function CreateGameBoard(name) {
             fleetPlaced.push(coordinates.length);
             return true;
         },
-        checkGameOver: function () {
+        gameOver: function () {
             if (Object.values(fleet).every(function (_a) {
                 var isSunk = _a.isSunk;
                 return isSunk();
@@ -151,6 +155,7 @@ function placeFleetRandom(player) {
 function gameStart() {
     if (!checkReady())
         return;
+    changeUI("Game starts");
     var shipContainer = document.getElementById("shipContainer");
     var player2Board = document.getElementById("player2Board");
     if (!shipContainer || !player2Board)
@@ -172,10 +177,10 @@ function changeLife(isSunk, _a) {
     var _b;
     var name = _a.name;
     var life = ((_b = document.getElementById(name + "SunkShip")) === null || _b === void 0 ? void 0 : _b.firstElementChild);
-    while ((life === null || life === void 0 ? void 0 : life.style.color) === "red")
+    while ((life === null || life === void 0 ? void 0 : life.style.color) === "black")
         life = life === null || life === void 0 ? void 0 : life.nextElementSibling;
     if (isSunk) {
-        life.style.color = "red";
+        life.style.color = "black";
     }
 }
 function checkSunk(player, shipName) {
@@ -183,11 +188,26 @@ function checkSunk(player, shipName) {
         return true;
     return false;
 }
+function checkGameOver(player) {
+    var enemy = player.name === "player1" ? player2 : player1;
+    if (player.gameOver()) {
+        changeUI(enemy.name + " wins!");
+        document.getElementById("content").style.display = "none";
+    }
+}
+function displayBattleUI(player, grid) {
+    if (checkSunk(player, player.board[grid]))
+        changeUI(player.name + "'s " + [player.board[grid]] + " sinks");
+    else
+        changeUI(player.name + "'s " + [player.board[grid]] + " gets hit");
+}
 function checkHit(player, grid) {
     if (Number.isNaN(parseInt(player.board[grid], 10))) {
         player.fleet[player.board[grid]].hit();
+        displayBattleUI(player, grid);
         changeLife(checkSunk(player, player.board[grid]), player);
         player.board[grid] = "-3";
+        checkGameOver(player);
     }
     else {
         player.board[grid] = "-2";
@@ -203,7 +223,6 @@ function takeTurn(player, coordinate) {
         : parseInt(coordinate, 10);
     markAttack(coordinate, enemy, grid);
     checkHit(enemy, grid);
-    console.log(player.board);
     return true;
 }
 function convertEvent(e) {
@@ -216,8 +235,10 @@ function AIPlay() {
     return random;
 }
 function playGame(e) {
-    if (takeTurn(player1, convertEvent(e)))
-        takeTurn(player2, AIPlay());
+    if (takeTurn(player1, convertEvent(e))) {
+        while (!takeTurn(player2, AIPlay()))
+            takeTurn(player2, AIPlay());
+    }
 }
 var shipID = "";
 var currentPosition = "";
