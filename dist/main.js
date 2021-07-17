@@ -20,8 +20,14 @@ var __assign = (this && this.__assign) || function () {
     };
     return __assign.apply(this, arguments);
 };
+var __spreadArray = (this && this.__spreadArray) || function (to, from) {
+    for (var i = 0, il = from.length, j = to.length; i < il; i++, j++)
+        to[j] = from[i];
+    return to;
+};
 var container = document.getElementById("shipContainer");
 var rotated = false;
+var previousMoves = [];
 function CreateShip(length, shipName) {
     var HP = length;
     var name = shipName;
@@ -212,6 +218,7 @@ function checkHit(player, grid) {
     else {
         player.board[grid] = "-2";
     }
+    return player.board[grid];
 }
 function takeTurn(player, coordinate) {
     var _a;
@@ -222,7 +229,11 @@ function takeTurn(player, coordinate) {
         ? parseInt(coordinate, 10) - 100
         : parseInt(coordinate, 10);
     markAttack(coordinate, enemy, grid);
-    checkHit(enemy, grid);
+    var moves = { index: 0, result: 0, ship: "" };
+    moves.ship = enemy.board[grid];
+    moves.result = checkHit(enemy, grid);
+    moves.index = grid;
+    previousMoves.push(moves);
     return true;
 }
 function convertEvent(e) {
@@ -230,15 +241,76 @@ function convertEvent(e) {
     var coordinates = parseInt(target.id, 10);
     return coordinates.toString();
 }
+var AIHit = false;
+var missRight = false;
 function AIPlay() {
-    var random = Math.floor(Math.random() * 100).toString();
-    return random;
+    var _a;
+    var random = Math.floor(Math.random() * 100);
+    var board = __spreadArray([], player1.board);
+    while (board[random] === "-2" || board[random] === "-3") {
+        random = Math.floor(Math.random() * 100);
+    }
+    if (previousMoves.length < 2)
+        return random.toString();
+    var lastSpot = previousMoves[previousMoves.length - 2];
+    var move;
+    var nextMoveX = lastSpot.index + 1;
+    var backMoveX = lastSpot.index - 2;
+    var topMoveY = lastSpot.index - 11;
+    var bottomMoveY = lastSpot.index - 2;
+    while (board[nextMoveX] === "-2" || board[nextMoveX] === "-3") {
+        if (nextMoveX > 0 && nextMoveX < 100)
+            nextMoveX += 1;
+        else
+            nextMoveX -= 1;
+    }
+    while (board[backMoveX] === "-2" || board[backMoveX] === "-3") {
+        if (backMoveX > 0 && backMoveX < 100)
+            backMoveX -= 1;
+        else
+            backMoveX += 1;
+    }
+    while (board[topMoveY] === "-2" || board[topMoveY] === "-3") {
+        if (topMoveY > 0 && topMoveY < 100)
+            topMoveY -= 10;
+        else
+            topMoveY += 10;
+    }
+    while (board[bottomMoveY] === "-2" || board[bottomMoveY] === "-3") {
+        if (bottomMoveY > 0 && bottomMoveY < 100)
+            bottomMoveY += 10;
+        else
+            bottomMoveY -= 10;
+    }
+    switch (true) {
+        case (_a = player1.fleet[lastSpot.ship]) === null || _a === void 0 ? void 0 : _a.isSunk():
+            AIHit = false;
+            missRight = false;
+            move = random;
+            break;
+        case lastSpot.result === "-3" && !AIHit:
+            move = nextMoveX;
+            AIHit = true;
+            break;
+        case lastSpot.result === "-3" && AIHit && !missRight:
+            move = nextMoveX;
+            break;
+        case lastSpot.result === "-2" && AIHit && !missRight:
+            move = backMoveX;
+            missRight = true;
+            break;
+        case lastSpot.result === "-3" && AIHit && missRight:
+            move = backMoveX + 1;
+            break;
+        default:
+            move = random;
+            break;
+    }
+    return move.toString();
 }
 function playGame(e) {
-    if (takeTurn(player1, convertEvent(e))) {
-        while (!takeTurn(player2, AIPlay()))
-            takeTurn(player2, AIPlay());
-    }
+    if (takeTurn(player1, convertEvent(e)))
+        takeTurn(player2, AIPlay());
 }
 var shipID = "";
 var currentPosition = "";
@@ -299,6 +371,11 @@ function addListeners() {
     rotateButton === null || rotateButton === void 0 ? void 0 : rotateButton.addEventListener("click", rotateShip);
 }
 addListeners();
+// TODO add complex AI
+// TODO add restart
+// TODO add better ship model and fix mark bug when a ship gets hit
+// TODO add delay to AI and remove player 1's click
+// TODO add delay to text
 
 
 /***/ })

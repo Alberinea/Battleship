@@ -4,6 +4,8 @@ const container = document.getElementById("shipContainer");
 
 let rotated = false;
 
+const previousMoves: any[] = [];
+
 function CreateShip(length: number, shipName: string) {
   let HP = length;
   const name = shipName;
@@ -204,6 +206,7 @@ function checkHit(player: any, grid: number) {
   } else {
     player.board[grid] = "-2";
   }
+  return player.board[grid];
 }
 
 function takeTurn(
@@ -217,7 +220,12 @@ function takeTurn(
       ? parseInt(coordinate, 10) - 100
       : parseInt(coordinate, 10);
   markAttack(coordinate, enemy, grid);
-  checkHit(enemy, grid);
+
+  const moves = { index: 0, result: 0, ship: "" };
+  moves.ship = enemy.board[grid];
+  moves.result = checkHit(enemy, grid);
+  moves.index = grid;
+  previousMoves.push(moves);
   return true;
 }
 
@@ -227,15 +235,70 @@ function convertEvent(e: Event) {
   return coordinates.toString();
 }
 
+let AIHit = false;
+let missRight = false;
+
 function AIPlay() {
-  const random = Math.floor(Math.random() * 100).toString();
-  return random;
+  let random = Math.floor(Math.random() * 100);
+  const board = [...player1.board];
+  while (board[random] === "-2" || board[random] === "-3") {
+    random = Math.floor(Math.random() * 100);
+  }
+  if (previousMoves.length < 2) return random.toString();
+
+  const lastSpot = previousMoves[previousMoves.length - 2];
+  let move;
+  let nextMoveX = lastSpot.index + 1;
+  let backMoveX = lastSpot.index - 2;
+  let topMoveY = lastSpot.index - 11;
+  let bottomMoveY = lastSpot.index - 2;
+
+  while (board[nextMoveX] === "-2" || board[nextMoveX] === "-3") {
+    if (nextMoveX > 0 && nextMoveX < 100) nextMoveX += 1;
+    else nextMoveX -= 1;
+  }
+  while (board[backMoveX] === "-2" || board[backMoveX] === "-3") {
+    if (backMoveX > 0 && backMoveX < 100) backMoveX -= 1;
+    else backMoveX += 1;
+  }
+  while (board[topMoveY] === "-2" || board[topMoveY] === "-3") {
+    if (topMoveY > 0 && topMoveY < 100) topMoveY -= 10;
+    else topMoveY += 10;
+  }
+  while (board[bottomMoveY] === "-2" || board[bottomMoveY] === "-3") {
+    if (bottomMoveY > 0 && bottomMoveY < 100) bottomMoveY += 10;
+    else bottomMoveY -= 10;
+  }
+
+  switch (true) {
+    case player1.fleet[lastSpot.ship]?.isSunk():
+      AIHit = false;
+      missRight = false;
+      move = random;
+      break;
+    case lastSpot.result === "-3" && !AIHit:
+      move = nextMoveX;
+      AIHit = true;
+      break;
+    case lastSpot.result === "-3" && AIHit && !missRight:
+      move = nextMoveX;
+      break;
+    case lastSpot.result === "-2" && AIHit && !missRight:
+      move = backMoveX;
+      missRight = true;
+      break;
+    case lastSpot.result === "-3" && AIHit && missRight:
+      move = backMoveX + 1;
+      break;
+    default:
+      move = random;
+      break;
+  }
+  return move.toString();
 }
 
 function playGame(e: Event) {
-  if (takeTurn(player1, convertEvent(e))) {
-    while (!takeTurn(player2, AIPlay())) takeTurn(player2, AIPlay());
-  }
+  if (takeTurn(player1, convertEvent(e))) takeTurn(player2, AIPlay());
 }
 
 let shipID = "";
@@ -302,3 +365,9 @@ function addListeners(): void {
 }
 
 addListeners();
+
+// TODO add complex AI
+// TODO add restart
+// TODO add better ship model and fix mark bug when a ship gets hit
+// TODO add delay to AI and remove player 1's click
+// TODO add delay to text
