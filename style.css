@@ -60,79 +60,91 @@ li:before {
 
 .grid {
   border: 1px solid white;
-  text-align: center;
   line-height: 50px;
   font-size: 5rem;
   cursor: pointer;
   user-select: none;
+  padding-left: 11px;
+  box-sizing: border-box;
 }
 
 .none {
   display: none;
 }
 
-.warship {
-  border-radius: 30px;
-}
-
 .carrier {
   width: 250px;
   height: 50px;
-  background-color: rgb(46, 36, 36);
+  background-size: 250px 50px;
+  background-image: url(../dist/img/carrier.png);
 }
 
 .battleship {
   width: 200px;
   height: 50px;
-  background-color: rgb(0, 255, 128);
+  background-size: 200px 50px;
+  background-image: url(../dist/img/battleship.png);
 }
 
 .cruiser {
   width: 150px;
   height: 50px;
-  background-color: rgb(0, 38, 255);
+  background-size: 150px 50px;
+  background-image: url(../dist/img/cruiser.png);
 }
 
 .submarine {
   width: 150px;
   height: 50px;
-  background-color: rgb(255, 0, 242);
+  background-size: 150px 50px;
+  background-image: url(../dist/img/submarine.png);
 }
 
 .destroyer {
   width: 100px;
   height: 50px;
-  background-color: rgb(200, 255, 0);
+  background-size: 100px 50px;
+  background-image: url(../dist/img/destroyer.png);
 }
 
 .carrierRotated {
   width: 50px;
   height: 250px;
-  background-color: rgb(46, 36, 36);
+  margin: 10px !important;
+  background-size: 50px 250px;
+  background-image: url(../dist/img/carrierRotated.png);
 }
 
 .battleshipRotated {
   width: 50px;
   height: 200px;
-  background-color: rgb(0, 255, 128);
+  margin: 10px !important;
+  background-size: 50px 200px;
+  background-image: url(../dist/img/battleshipRotated.png);
 }
 
 .cruiserRotated {
   width: 50px;
   height: 150px;
-  background-color: rgb(0, 38, 255);
+  margin: 10px !important;
+  background-size: 50px 150px;
+  background-image: url(../dist/img/cruiserRotated.png);
 }
 
 .submarineRotated {
   width: 50px;
   height: 150px;
-  background-color: rgb(255, 0, 242);
+  margin: 10px !important;
+  background-size: 50px 150px;
+  background-image: url(../dist/img/submarineRotated.png);
 }
 
 .destroyerRotated {
   width: 50px;
   height: 100px;
-  background-color: rgb(200, 255, 0);
+  margin: 10px !important;
+  background-size: 50px 100px;
+  background-image: url(../dist/img/destroyerRotated.png);
 }
 
 #content {
