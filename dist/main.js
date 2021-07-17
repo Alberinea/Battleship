@@ -103,7 +103,6 @@ function CreateGameBoard(name) {
         board: board,
         placeFleet: function (coordinates, shipName) {
             var count = 10 * coordinates.length;
-            console.log(coordinates);
             if (!rotated &&
                 coordinates.some(function (co) { return co % 10 === 0 && co !== coordinates[0]; }))
                 return false;
@@ -154,6 +153,8 @@ function placeFleetRandom(player) {
     var fleet = __assign({}, player.fleet);
     while (player.fleetPlaced.length !== 5) {
         var first = Object.values(fleet)[0];
+        if (!first)
+            return;
         var random = Math.floor(Math.random() * 100);
         if (random < 51)
             rotated = true;
@@ -235,11 +236,16 @@ function takeTurn(player, coordinate) {
         ? parseInt(coordinate, 10) - 100
         : parseInt(coordinate, 10);
     markAttack(coordinate, enemy, grid);
-    var moves = { index: 0, result: 0, ship: "" };
-    moves.ship = player.board[grid];
-    moves.result = checkHit(enemy, grid);
-    moves.index = grid;
-    previousMoves.push(moves);
+    if (player === player2) {
+        var moves = { index: 0, result: 0, ship: "" };
+        moves.ship = enemy.board[grid];
+        moves.result = checkHit(enemy, grid);
+        moves.index = grid;
+        previousMoves.push(moves);
+    }
+    else {
+        checkHit(enemy, grid);
+    }
     return true;
 }
 function convertEvent(e) {
@@ -247,66 +253,108 @@ function convertEvent(e) {
     var coordinates = parseInt(target.id, 10);
     return coordinates.toString();
 }
+var hunt = false;
 function AIPlay() {
-    var _a, _b;
-    var random = Math.floor(Math.random() * 100);
+    var _a;
     var board = __spreadArray([], player1.board);
-    while (board[random] === "-2" || board[random] === "-3") {
-        random = Math.floor(Math.random() * 100);
+    var random = Math.floor(Math.random() * 100);
+    var randomEven = random;
+    while (randomEven % 2 === 1) {
+        randomEven = Math.floor(Math.random() * 100);
+        if (board[randomEven] === "-2" || board[randomEven] === "-3")
+            randomEven = Math.floor(Math.random() * 100);
     }
-    if (previousMoves.length < 2 ||
-        previousMoves.length < 4 ||
-        previousMoves.length < 6)
-        return random.toString();
-    var lastSpot = previousMoves[previousMoves.length - 2];
-    var lastLastSpot = previousMoves[previousMoves.length - 4];
-    var l3Spot = previousMoves[previousMoves.length - 6];
     var move;
-    var direction = [
-        lastSpot.index + 1,
-        lastSpot.index - 1,
-        lastSpot.index - 10,
-        lastSpot.index + 10,
-    ];
-    if (lastSpot.result === "-2" &&
-        lastLastSpot.result === "-3" &&
-        l3Spot.result === "-3" &&
-        !((_a = player1.fleet[lastSpot.ship]) === null || _a === void 0 ? void 0 : _a.isSunk())) {
-        if (lastSpot.index - lastLastSpot.index === 1)
-            move = lastSpot.index - 3;
-        if (lastSpot.index - lastLastSpot.index === -1)
-            move = lastSpot.index + 3;
-        if (lastSpot.index - lastLastSpot.index === 10)
-            move = lastSpot.index - 30;
-        if (lastSpot.index - lastLastSpot.index === -10)
-            move = lastSpot.index + 30;
-        if (move < 0 || move > 99)
-            move = random;
+    if (previousMoves.length < 1)
+        return random;
+    if (previousMoves.length < 2 && !hunt)
+        return random;
+    var l1Spot = previousMoves[previousMoves.length - 1];
+    var moveRight = l1Spot.index + 1;
+    if (!hunt && l1Spot.result === "-3") {
+        move = moveRight;
+        hunt = true;
+        if (previousMoves.length < 2)
+            return move.toString();
     }
-    else if (lastSpot.result === "-2" ||
-        ((_b = player1.fleet[lastSpot.ship]) === null || _b === void 0 ? void 0 : _b.isSunk())) {
+    var l2Spot = previousMoves[previousMoves.length - 2];
+    var moveLeft = l2Spot.index - 1;
+    var moveTop = l2Spot.index - 9;
+    var moveBottom = l2Spot.index + 11;
+    var stopRight = false;
+    var stopLeft = false;
+    var stopTop = false;
+    var stopBottom = false;
+    while (board[moveRight] === "-2" || board[moveRight] === "-3") {
+        if (!stopRight)
+            moveRight += 1;
+        if (moveRight % 10 === 0)
+            stopRight = true;
+        if (stopRight)
+            moveRight += 1;
+    }
+    while (board[moveLeft] === "-2" || board[moveLeft] === "-3") {
+        if (!stopLeft)
+            moveLeft -= 1;
+        if (moveLeft % 10 === 0)
+            stopLeft = true;
+        if (stopLeft)
+            moveLeft += 1;
+    }
+    while (board[moveTop] === "-2" || board[moveTop] === "-3") {
+        if (!stopTop)
+            moveTop -= 10;
+        if (moveTop < 0)
+            stopTop = true;
+        if (stopTop)
+            moveTop += 10;
+        if (moveTop > 100)
+            break;
+    }
+    while (board[moveBottom] === "-2" || board[moveBottom] === "-3") {
+        if (!stopBottom)
+            moveBottom += 10;
+        if (moveBottom > 100)
+            stopBottom = true;
+        if (stopBottom)
+            moveBottom -= 10;
+        if (moveBottom < 0)
+            break;
+    }
+    if ((_a = player1.fleet[l1Spot.ship]) === null || _a === void 0 ? void 0 : _a.isSunk()) {
         move = random;
+        hunt = false;
     }
-    else if (lastLastSpot.result === "-3" && lastSpot.result === "-3") {
-        if (lastSpot.index - lastLastSpot.index === 10)
-            move = lastSpot.index + 10;
-        if (lastSpot.index - lastLastSpot.index === -10)
-            move = lastSpot.index - 10;
-        if (lastSpot.index - lastLastSpot.index === 1)
-            move = lastSpot.index + 1;
-        if (lastSpot.index - lastLastSpot.index === -1)
-            move = lastSpot.index - 1;
-        if (move < 0 || move > 99)
-            move = random;
+    else if (hunt && l1Spot.result === "-3" && l2Spot.result === "-3") {
+        if (l1Spot.index - l2Spot.index === 10)
+            move = l1Spot.index + 10;
+        if (l1Spot.index - l2Spot.index === -10)
+            move = l1Spot.index - 10;
+        if (l1Spot.index - l2Spot.index === 1)
+            move = l1Spot.index + 1;
+        if (l1Spot.index - l2Spot.index === -1)
+            move = l1Spot.index - 1;
     }
-    else if (lastSpot.result === "-3") {
-        var randomDirection = Math.floor(Math.random() * 4);
-        var randomGuess = direction[randomDirection];
-        while (player1.board[randomGuess] === "-2" ||
-            player1.board[randomGuess] === "-3") {
-            randomGuess = direction[Math.floor(Math.random() * 4)];
+    else if (hunt &&
+        l1Spot.result === "-2" &&
+        l2Spot.result === "-2" &&
+        previousMoves[previousMoves.length - 3].result === "-2") {
+        move = moveBottom;
+    }
+    else if (hunt && l1Spot.result === "-2" && l2Spot.result === "-2") {
+        move = moveTop;
+    }
+    else if (hunt && l1Spot.result === "-2") {
+        move = moveLeft;
+    }
+    else if (!hunt && l1Spot.result === "-2")
+        move = random;
+    if (!move || l1Spot.index === move || move < 0 || move > 100) {
+        while (board[random] === "-2" || board[random] === "-3") {
+            random = Math.floor(Math.random() * 100);
         }
-        move = randomGuess;
+        move = random;
+        console.log("random");
     }
     return move.toString();
 }
@@ -403,6 +451,7 @@ function addListeners() {
     restartButton === null || restartButton === void 0 ? void 0 : restartButton.addEventListener("click", restart);
 }
 addListeners();
+// TODO fix AI
 
 
 /***/ })
