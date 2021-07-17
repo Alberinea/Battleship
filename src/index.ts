@@ -119,6 +119,7 @@ function rotateShip() {
     if (ship.className === `warship ${ship.id}`) {
       ship.classList.remove(ship.id);
       ship.classList.add(`${ship.id}Rotated`);
+      ship.style.margin = "10px";
       rotated = true;
     } else {
       ship.classList.remove(`${ship.id}Rotated`);
@@ -219,13 +220,15 @@ function takeTurn(
     player.name === "player1"
       ? parseInt(coordinate, 10) - 100
       : parseInt(coordinate, 10);
+
   markAttack(coordinate, enemy, grid);
 
   const moves = { index: 0, result: 0, ship: "" };
-  moves.ship = enemy.board[grid];
+  moves.ship = player.board[grid];
   moves.result = checkHit(enemy, grid);
   moves.index = grid;
   previousMoves.push(moves);
+
   return true;
 }
 
@@ -235,64 +238,62 @@ function convertEvent(e: Event) {
   return coordinates.toString();
 }
 
-let AIHit = false;
-let missRight = false;
-
 function AIPlay() {
   let random = Math.floor(Math.random() * 100);
   const board = [...player1.board];
   while (board[random] === "-2" || board[random] === "-3") {
     random = Math.floor(Math.random() * 100);
   }
-  if (previousMoves.length < 2) return random.toString();
+  if (
+    previousMoves.length < 2 ||
+    previousMoves.length < 4 ||
+    previousMoves.length < 6
+  )
+    return random.toString();
 
   const lastSpot = previousMoves[previousMoves.length - 2];
+  const lastLastSpot = previousMoves[previousMoves.length - 4];
+  const l3Spot = previousMoves[previousMoves.length - 6];
+
   let move;
-  let nextMoveX = lastSpot.index + 1;
-  let backMoveX = lastSpot.index - 2;
-  let topMoveY = lastSpot.index - 11;
-  let bottomMoveY = lastSpot.index - 2;
-
-  while (board[nextMoveX] === "-2" || board[nextMoveX] === "-3") {
-    if (nextMoveX > 0 && nextMoveX < 100) nextMoveX += 1;
-    else nextMoveX -= 1;
-  }
-  while (board[backMoveX] === "-2" || board[backMoveX] === "-3") {
-    if (backMoveX > 0 && backMoveX < 100) backMoveX -= 1;
-    else backMoveX += 1;
-  }
-  while (board[topMoveY] === "-2" || board[topMoveY] === "-3") {
-    if (topMoveY > 0 && topMoveY < 100) topMoveY -= 10;
-    else topMoveY += 10;
-  }
-  while (board[bottomMoveY] === "-2" || board[bottomMoveY] === "-3") {
-    if (bottomMoveY > 0 && bottomMoveY < 100) bottomMoveY += 10;
-    else bottomMoveY -= 10;
-  }
-
-  switch (true) {
-    case player1.fleet[lastSpot.ship]?.isSunk():
-      AIHit = false;
-      missRight = false;
-      move = random;
-      break;
-    case lastSpot.result === "-3" && !AIHit:
-      move = nextMoveX;
-      AIHit = true;
-      break;
-    case lastSpot.result === "-3" && AIHit && !missRight:
-      move = nextMoveX;
-      break;
-    case lastSpot.result === "-2" && AIHit && !missRight:
-      move = backMoveX;
-      missRight = true;
-      break;
-    case lastSpot.result === "-3" && AIHit && missRight:
-      move = backMoveX + 1;
-      break;
-    default:
-      move = random;
-      break;
+  const direction = [
+    lastSpot.index + 1,
+    lastSpot.index - 1,
+    lastSpot.index - 10,
+    lastSpot.index + 10,
+  ];
+  if (
+    lastSpot.result === "-2" &&
+    lastLastSpot.result === "-3" &&
+    l3Spot.result === "-3" &&
+    !player1.fleet[lastSpot.ship]?.isSunk()
+  ) {
+    if (lastSpot.index - lastLastSpot.index === 1) move = lastSpot.index - 3;
+    if (lastSpot.index - lastLastSpot.index === -1) move = lastSpot.index + 3;
+    if (lastSpot.index - lastLastSpot.index === 10) move = lastSpot.index - 30;
+    if (lastSpot.index - lastLastSpot.index === -10) move = lastSpot.index + 30;
+    if (move < 0 || move > 99) move = random;
+  } else if (
+    lastSpot.result === "-2" ||
+    player1.fleet[lastSpot.ship]?.isSunk()
+  ) {
+    move = random;
+  } else if (lastLastSpot.result === "-3" && lastSpot.result === "-3") {
+    if (lastSpot.index - lastLastSpot.index === 10) move = lastSpot.index + 10;
+    if (lastSpot.index - lastLastSpot.index === -10) move = lastSpot.index - 10;
+    if (lastSpot.index - lastLastSpot.index === 1) move = lastSpot.index + 1;
+    if (lastSpot.index - lastLastSpot.index === -1) move = lastSpot.index - 1;
+    if (move < 0 || move > 99) move = random;
+  } else if (lastSpot.result === "-3") {
+    const randomDirection = Math.floor(Math.random() * 4);
+    let randomGuess = direction[randomDirection];
+    while (
+      player1.board[randomGuess] === "-2" ||
+      player1.board[randomGuess] === "-3"
+    ) {
+      randomGuess = direction[Math.floor(Math.random() * 4)];
+    }
+    move = randomGuess;
   }
   return move.toString();
 }
@@ -366,8 +367,5 @@ function addListeners(): void {
 
 addListeners();
 
-// TODO add complex AI
+// TODO 1.No repeat 2.No out of bounds
 // TODO add restart
-// TODO add better ship model and fix mark bug when a ship gets hit
-// TODO add delay to AI and remove player 1's click
-// TODO add delay to text
