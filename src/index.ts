@@ -16,6 +16,9 @@ function CreateShip(length: number, shipName: string) {
     getHP(): number {
       return HP;
     },
+    fullHeal() {
+      HP = length;
+    },
     hit(): void {
       HP -= 1;
     },
@@ -83,6 +86,7 @@ function CreateGameBoard(name: Player) {
     board,
     placeFleet(coordinates: number[], shipName: string): boolean {
       const count = 10 * coordinates.length;
+      console.log(coordinates);
       if (
         !rotated &&
         coordinates.some((co) => co % 10 === 0 && co !== coordinates[0])
@@ -149,13 +153,13 @@ function placeFleetRandom(player: any) {
 
 function gameStart() {
   if (!checkReady()) return;
-  changeUI("Game starts");
   const shipContainer = document.getElementById("shipContainer");
   const player2Board = document.getElementById("player2Board");
   if (!shipContainer || !player2Board) return;
   shipContainer.style.display = "none";
   player2Board.style.display = "flex";
   placeFleetRandom(player2);
+  changeUI("Game starts");
 }
 
 function markAttack(id: string, player: any, grid: number) {
@@ -188,6 +192,7 @@ function checkGameOver(player: any) {
   if (player.gameOver()) {
     changeUI(`${enemy.name} wins!`);
     document.getElementById("content").style.display = "none";
+    document.getElementById("restart").style.display = "block";
   }
 }
 
@@ -228,7 +233,6 @@ function takeTurn(
   moves.result = checkHit(enemy, grid);
   moves.index = grid;
   previousMoves.push(moves);
-
   return true;
 }
 
@@ -302,6 +306,36 @@ function playGame(e: Event) {
   if (takeTurn(player1, convertEvent(e))) takeTurn(player2, AIPlay());
 }
 
+function restart() {
+  for (let i = 0; i < player1.board.length; i += 1) {
+    player1.board[i] = i.toString();
+    player2.board[i] = (i + 100).toString();
+  }
+  Object.values(player1.fleet).forEach((ship) => ship.fullHeal());
+  Object.values(player2.fleet).forEach((ship) => ship.fullHeal());
+  player1.fleetPlaced = [];
+  player2.fleetPlaced = [];
+
+  document.querySelectorAll(".grid").forEach((grid: HTMLElement) => {
+    grid.className = "grid";
+    grid.style.color = "none";
+    grid.innerText = "";
+  });
+  document.querySelectorAll(".warship").forEach((ship: HTMLElement) => {
+    ship.style.display = "block";
+  });
+  document.querySelectorAll(".life").forEach((life: HTMLElement) => {
+    life.style.color = "red";
+  });
+
+  if (rotated) rotateShip();
+  changeUI("Place your ships");
+  document.getElementById("content").style.display = "flex";
+  document.getElementById("shipContainer").style.display = "flex";
+  document.getElementById("player2Board").style.display = "none";
+  document.getElementById("restart").style.display = "none";
+}
+
 let shipID = "";
 let currentPosition = "";
 
@@ -333,6 +367,7 @@ function addListeners(): void {
   const AIBoard = document.getElementById("player2Board");
   const AIGrids = AIBoard?.querySelectorAll(".grid");
   const rotateButton = document.querySelector("button");
+  const restartButton = document.getElementById("restart");
   let validMove = true;
 
   warships.forEach((warship) =>
@@ -363,9 +398,7 @@ function addListeners(): void {
     grid.addEventListener("click", (e) => playGame(e))
   );
   rotateButton?.addEventListener("click", rotateShip);
+  restartButton?.addEventListener("click", restart);
 }
 
 addListeners();
-
-// TODO 1.No repeat 2.No out of bounds
-// TODO add restart

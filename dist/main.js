@@ -38,6 +38,9 @@ function CreateShip(length, shipName) {
         getHP: function () {
             return HP;
         },
+        fullHeal: function () {
+            HP = length;
+        },
         hit: function () {
             HP -= 1;
         },
@@ -100,6 +103,7 @@ function CreateGameBoard(name) {
         board: board,
         placeFleet: function (coordinates, shipName) {
             var count = 10 * coordinates.length;
+            console.log(coordinates);
             if (!rotated &&
                 coordinates.some(function (co) { return co % 10 === 0 && co !== coordinates[0]; }))
                 return false;
@@ -162,7 +166,6 @@ function placeFleetRandom(player) {
 function gameStart() {
     if (!checkReady())
         return;
-    changeUI("Game starts");
     var shipContainer = document.getElementById("shipContainer");
     var player2Board = document.getElementById("player2Board");
     if (!shipContainer || !player2Board)
@@ -170,6 +173,7 @@ function gameStart() {
     shipContainer.style.display = "none";
     player2Board.style.display = "flex";
     placeFleetRandom(player2);
+    changeUI("Game starts");
 }
 function markAttack(id, player, grid) {
     var gridAttackedDOM = document.getElementById(id);
@@ -200,6 +204,7 @@ function checkGameOver(player) {
     if (player.gameOver()) {
         changeUI(enemy.name + " wins!");
         document.getElementById("content").style.display = "none";
+        document.getElementById("restart").style.display = "block";
     }
 }
 function displayBattleUI(player, grid) {
@@ -309,6 +314,34 @@ function playGame(e) {
     if (takeTurn(player1, convertEvent(e)))
         takeTurn(player2, AIPlay());
 }
+function restart() {
+    for (var i = 0; i < player1.board.length; i += 1) {
+        player1.board[i] = i.toString();
+        player2.board[i] = (i + 100).toString();
+    }
+    Object.values(player1.fleet).forEach(function (ship) { return ship.fullHeal(); });
+    Object.values(player2.fleet).forEach(function (ship) { return ship.fullHeal(); });
+    player1.fleetPlaced = [];
+    player2.fleetPlaced = [];
+    document.querySelectorAll(".grid").forEach(function (grid) {
+        grid.className = "grid";
+        grid.style.color = "none";
+        grid.innerText = "";
+    });
+    document.querySelectorAll(".warship").forEach(function (ship) {
+        ship.style.display = "block";
+    });
+    document.querySelectorAll(".life").forEach(function (life) {
+        life.style.color = "red";
+    });
+    if (rotated)
+        rotateShip();
+    changeUI("Place your ships");
+    document.getElementById("content").style.display = "flex";
+    document.getElementById("shipContainer").style.display = "flex";
+    document.getElementById("player2Board").style.display = "none";
+    document.getElementById("restart").style.display = "none";
+}
 var shipID = "";
 var currentPosition = "";
 function dragstart(e) {
@@ -338,6 +371,7 @@ function addListeners() {
     var AIBoard = document.getElementById("player2Board");
     var AIGrids = AIBoard === null || AIBoard === void 0 ? void 0 : AIBoard.querySelectorAll(".grid");
     var rotateButton = document.querySelector("button");
+    var restartButton = document.getElementById("restart");
     var validMove = true;
     warships.forEach(function (warship) {
         return warship.addEventListener("dragstart", dragstart);
@@ -366,10 +400,9 @@ function addListeners() {
         return grid.addEventListener("click", function (e) { return playGame(e); });
     });
     rotateButton === null || rotateButton === void 0 ? void 0 : rotateButton.addEventListener("click", rotateShip);
+    restartButton === null || restartButton === void 0 ? void 0 : restartButton.addEventListener("click", restart);
 }
 addListeners();
-// TODO 1.No repeat 2.No out of bounds
-// TODO add restart
 
 
 /***/ })
