@@ -77,70 +77,70 @@ li:before {
   width: 250px;
   height: 50px;
   background-size: 250px 50px;
-  background-image: url(../dist/img/carrier.png);
+  background-image: url(../src/img/carrier.png);
 }
 
 .battleship {
   width: 200px;
   height: 50px;
   background-size: 200px 50px;
-  background-image: url(../dist/img/battleship.png);
+  background-image: url(../src/img/battleship.png);
 }
 
 .cruiser {
   width: 150px;
   height: 50px;
   background-size: 150px 50px;
-  background-image: url(../dist/img/cruiser.png);
+  background-image: url(../src/img/cruiser.png)
 }
 
 .submarine {
   width: 150px;
   height: 50px;
   background-size: 150px 50px;
-  background-image: url(../dist/img/submarine.png);
+  background-image: url(../src/img/submarine.png);
 }
 
 .destroyer {
   width: 100px;
   height: 50px;
   background-size: 100px 50px;
-  background-image: url(../dist/img/destroyer.png);
+  background-image: url(../src/img/destroyer.png);
 }
 
 .carrierRotated {
   width: 50px;
   height: 250px;
   background-size: 50px 250px;
-  background-image: url(../dist/img/carrierRotated.png);
+  background-image: url(../src/img/carrierRotated.png);
 }
 
 .battleshipRotated {
   width: 50px;
   height: 200px;
   background-size: 50px 200px;
-  background-image: url(../dist/img/battleshipRotated.png);
+  background-image: url(../src/img/battleshipRotated.png);
 }
 
 .cruiserRotated {
   width: 50px;
   height: 150px;
   background-size: 50px 150px;
-  background-image: url(../dist/img/cruiserRotated.png);
+  background-image: url(../src/img/cruiserRotated.png);
 }
 
 .submarineRotated {
   width: 50px;
   height: 150px;
   background-size: 50px 150px;
-  background-image: url(../dist/img/submarineRotated.png);
+  background-image: url(../src/img/submarineRotated.png);
 }
 
 .destroyerRotated {
   width: 50px;
   height: 100px;
   background-size: 50px 100px;
-  background-image: url(../dist/img/destroyerRotated.png);
+  background-image: url(../src/img/destroyerRotated.png);
 }
 
 .name {
