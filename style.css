@@ -57,6 +57,7 @@ li:before {
   background-color: rgb(55, 84, 179);
   grid-template-columns: repeat(10, 50px);
   grid-template-rows: repeat(10, 50px);
+  user-select: none;
 }
 
 .grid {
@@ -140,6 +141,10 @@ li:before {
   height: 100px;
   background-size: 50px 100px;
   background-image: url(../dist/img/destroyerRotated.png);
+}
+
+.name {
+  user-select: none;
 }
 
 #content {
