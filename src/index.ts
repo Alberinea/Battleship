@@ -410,8 +410,6 @@ function AIPlay(): string {
 
   if (!move || move === -1) move = highestProbability[random];
 
-  console.log(getProbability(freeSpots, shipsLeft));
-
   return move.toString();
 }
 
