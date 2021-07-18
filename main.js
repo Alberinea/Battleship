@@ -104,11 +104,14 @@ function CreateGameBoard(name) {
         placeFleet: function (coordinates, shipName) {
             var count = 10 * coordinates.length;
             if (!rotated &&
-                coordinates.some(function (co) { return co % 10 === 0 && co !== coordinates[0]; }))
+                coordinates.some(function (co) { return co % 10 === 0 && co !== coordinates[0]; })) {
                 return false;
+            }
             if (rotated && coordinates[0] + count - 10 > 100)
                 return false;
             if (coordinates.some(function (co) { return Number.isNaN(parseInt(board[co], 10)); }))
+                return false;
+            if (coordinates.some(function (co) { var _a; return ((_a = document.getElementById(co.toString())) === null || _a === void 0 ? void 0 : _a.innerText) === "•"; }))
                 return false;
             coordinates.forEach(function (co) {
                 board[co] = shipName;
@@ -253,109 +256,134 @@ function convertEvent(e) {
     var coordinates = parseInt(target.id, 10);
     return coordinates.toString();
 }
-var hunt = false;
-function AIPlay() {
-    var _a;
-    var board = __spreadArray([], player1.board);
-    var random = Math.floor(Math.random() * 100);
-    var randomEven = random;
-    while (randomEven % 2 === 1) {
-        randomEven = Math.floor(Math.random() * 100);
-        if (board[randomEven] === "-2" || board[randomEven] === "-3")
-            randomEven = Math.floor(Math.random() * 100);
-    }
-    var move;
-    if (previousMoves.length < 1)
-        return random;
-    if (previousMoves.length < 2 && !hunt)
-        return random;
-    var l1Spot = previousMoves[previousMoves.length - 1];
-    var moveRight = l1Spot.index + 1;
-    if (!hunt && l1Spot.result === "-3") {
-        move = moveRight;
-        hunt = true;
-        if (previousMoves.length < 2)
-            return move.toString();
-    }
-    var l2Spot = previousMoves[previousMoves.length - 2];
-    var moveLeft = l2Spot.index - 1;
-    var moveTop = l2Spot.index - 9;
-    var moveBottom = l2Spot.index + 11;
-    var stopRight = false;
-    var stopLeft = false;
-    var stopTop = false;
-    var stopBottom = false;
-    while (board[moveRight] === "-2" || board[moveRight] === "-3") {
-        if (!stopRight)
-            moveRight += 1;
-        if (moveRight % 10 === 0)
-            stopRight = true;
-        if (stopRight)
-            moveRight += 1;
-    }
-    while (board[moveLeft] === "-2" || board[moveLeft] === "-3") {
-        if (!stopLeft)
-            moveLeft -= 1;
-        if (moveLeft % 10 === 0)
-            stopLeft = true;
-        if (stopLeft)
-            moveLeft += 1;
-    }
-    while (board[moveTop] === "-2" || board[moveTop] === "-3") {
-        if (!stopTop)
-            moveTop -= 10;
-        if (moveTop < 0)
-            stopTop = true;
-        if (stopTop)
-            moveTop += 10;
-        if (moveTop > 100)
-            break;
-    }
-    while (board[moveBottom] === "-2" || board[moveBottom] === "-3") {
-        if (!stopBottom)
-            moveBottom += 10;
-        if (moveBottom > 100)
-            stopBottom = true;
-        if (stopBottom)
-            moveBottom -= 10;
-        if (moveBottom < 0)
-            break;
-    }
-    if ((_a = player1.fleet[l1Spot.ship]) === null || _a === void 0 ? void 0 : _a.isSunk()) {
-        move = random;
-        hunt = false;
-    }
-    else if (hunt && l1Spot.result === "-3" && l2Spot.result === "-3") {
-        if (l1Spot.index - l2Spot.index === 10)
-            move = l1Spot.index + 10;
-        if (l1Spot.index - l2Spot.index === -10)
-            move = l1Spot.index - 10;
-        if (l1Spot.index - l2Spot.index === 1)
-            move = l1Spot.index + 1;
-        if (l1Spot.index - l2Spot.index === -1)
-            move = l1Spot.index - 1;
-    }
-    else if (hunt &&
-        l1Spot.result === "-2" &&
-        l2Spot.result === "-2" &&
-        previousMoves[previousMoves.length - 3].result === "-2") {
-        move = moveBottom;
-    }
-    else if (hunt && l1Spot.result === "-2" && l2Spot.result === "-2") {
-        move = moveTop;
-    }
-    else if (hunt && l1Spot.result === "-2") {
-        move = moveLeft;
-    }
-    else if (!hunt && l1Spot.result === "-2")
-        move = random;
-    if (!move || l1Spot.index === move || move < 0 || move > 100) {
-        while (board[random] === "-2" || board[random] === "-3") {
-            random = Math.floor(Math.random() * 100);
+function getProbability(board, shipLeft) {
+    var _a, _b;
+    var probability = [];
+    var player3 = CreateGameBoard("player3");
+    player3.board = __spreadArray([], board);
+    for (var i = 0; i < board.length; i += 1) {
+        var oddsHorizontal = 0;
+        for (var x = 0; x < shipLeft.length; x += 1) {
+            if (player3.placeFleet(getCoordinates(board[i], shipLeft[x].getHP()), "2"))
+                oddsHorizontal += 1;
         }
-        move = random;
-        console.log("random");
+        if (((_a = document.getElementById(i.toString())) === null || _a === void 0 ? void 0 : _a.innerText) === "•")
+            oddsHorizontal = 0;
+        probability.push(oddsHorizontal);
     }
+    rotated = true;
+    for (var i = 0; i < board.length; i += 1) {
+        var oddsVertical = 0;
+        for (var x = 0; x < shipLeft.length; x += 1) {
+            if (player3.placeFleet(getCoordinates(board[i], shipLeft[x].getHP()), "2"))
+                oddsVertical += 1;
+        }
+        if (((_b = document.getElementById(i.toString())) === null || _b === void 0 ? void 0 : _b.innerText) === "•")
+            oddsVertical = 0;
+        probability[i] += oddsVertical;
+    }
+    rotated = false;
+    return probability;
+}
+function spreadHits(index, board) {
+    var nearbySpaces = board.reduce(function (a, e, i) {
+        return e === (index - 10).toString() ||
+            e === (index + 10).toString() ||
+            e === (index - 1).toString() ||
+            e === (index + 1).toString()
+            ? a.concat(i.toString())
+            : a;
+    }, []);
+    var random = Math.floor(Math.random() * nearbySpaces.length);
+    if (nearbySpaces.length === 0) {
+        return null;
+    }
+    return nearbySpaces[random];
+}
+function focusHits(board, shipName) {
+    var damagedShip = board.findIndex(function (arg) { return arg === shipName; });
+    return damagedShip;
+}
+function getLastMove(index) {
+    if (!previousMoves[previousMoves.length - index])
+        return null;
+    return previousMoves[previousMoves.length - index];
+}
+var hunt = false;
+var shipsFound = [];
+var shipsLeft = Object.keys(player1.fleet).map(function (arg) { return player1.fleet[arg]; });
+function AIPlay() {
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v;
+    var move;
+    var freeSpots = player1.board.map(function (arg) {
+        if (arg === "-2" || arg === "-3")
+            arg = null;
+        else
+            arg = player1.board.indexOf(arg).toString();
+        return arg;
+    });
+    if ((_b = player1.fleet[(_a = getLastMove(1)) === null || _a === void 0 ? void 0 : _a.ship]) === null || _b === void 0 ? void 0 : _b.isSunk()) {
+        var indexLeft = shipsLeft
+            .map(function (arg) { return arg.getName(); })
+            .indexOf((_c = getLastMove(1)) === null || _c === void 0 ? void 0 : _c.ship);
+        var indexFound = shipsFound.indexOf(getLastMove(1).ship);
+        shipsLeft.splice(indexLeft, 1);
+        shipsFound.splice(indexFound, 1);
+        if (shipsFound.length === 0) {
+            hunt = false;
+            getLastMove(1).result = "-2";
+        }
+    }
+    var highestSpots = Math.max.apply(Math, getProbability(freeSpots, shipsLeft));
+    var highestProbability = getProbability(freeSpots, shipsLeft).reduce(function (a, e, i) { return (e === highestSpots ? a.concat(i) : a); }, []);
+    var random = Math.floor(Math.random() * highestProbability.length);
+    if (!hunt) {
+        move = highestProbability[random];
+    }
+    if (((_d = getLastMove(1)) === null || _d === void 0 ? void 0 : _d.result) === "-3") {
+        hunt = true;
+        if (shipsFound.every(function (ship) { return ship !== getLastMove(1).ship; }))
+            shipsFound.push(getLastMove(1).ship);
+        move = spreadHits(getLastMove(1).index, freeSpots);
+    }
+    if (hunt && ((_e = getLastMove(1)) === null || _e === void 0 ? void 0 : _e.result) === "-2") {
+        move = spreadHits(getLastMove(2).index, freeSpots);
+    }
+    if (hunt &&
+        ((_f = getLastMove(1)) === null || _f === void 0 ? void 0 : _f.result) === "-2" &&
+        ((_g = getLastMove(2)) === null || _g === void 0 ? void 0 : _g.result) === "-2") {
+        move = spreadHits(getLastMove(3).index, freeSpots);
+    }
+    if (hunt &&
+        ((_h = getLastMove(1)) === null || _h === void 0 ? void 0 : _h.result) === "-2" &&
+        ((_j = getLastMove(2)) === null || _j === void 0 ? void 0 : _j.result) === "-2" &&
+        ((_k = getLastMove(3)) === null || _k === void 0 ? void 0 : _k.result) === "-2") {
+        move = spreadHits(getLastMove(4).index, freeSpots);
+    }
+    if (hunt &&
+        ((_l = getLastMove(1)) === null || _l === void 0 ? void 0 : _l.result) === "-3" &&
+        ((_m = getLastMove(2)) === null || _m === void 0 ? void 0 : _m.result) === "-2") {
+        move = spreadHits(getLastMove(1).index, freeSpots);
+    }
+    if (hunt &&
+        ((_o = getLastMove(1)) === null || _o === void 0 ? void 0 : _o.result) === "-2" &&
+        ((_p = getLastMove(2)) === null || _p === void 0 ? void 0 : _p.result) === "-3" &&
+        ((_q = getLastMove(3)) === null || _q === void 0 ? void 0 : _q.result) === "-3")
+        move = focusHits(player1.board, getLastMove(2).ship);
+    if (hunt &&
+        ((_r = getLastMove(1)) === null || _r === void 0 ? void 0 : _r.result) === "-3" &&
+        ((_s = getLastMove(2)) === null || _s === void 0 ? void 0 : _s.result) === "-3")
+        move = focusHits(player1.board, getLastMove(1).ship);
+    if (move === -1)
+        move = spreadHits(getLastMove(2), freeSpots);
+    if (shipsFound.length > 0 &&
+        ((_t = getLastMove(1)) === null || _t === void 0 ? void 0 : _t.result) === "-2" &&
+        ((_u = getLastMove(2)) === null || _u === void 0 ? void 0 : _u.result) === "-2" &&
+        ((_v = getLastMove(3)) === null || _v === void 0 ? void 0 : _v.result) === "-2")
+        move = focusHits(player1.board, shipsFound[0]);
+    if (!move || move === -1)
+        move = highestProbability[random];
+    console.log(getProbability(freeSpots, shipsLeft));
     return move.toString();
 }
 function playGame(e) {
@@ -371,6 +399,9 @@ function restart() {
     Object.values(player2.fleet).forEach(function (ship) { return ship.fullHeal(); });
     player1.fleetPlaced = [];
     player2.fleetPlaced = [];
+    hunt = false;
+    shipsFound = [];
+    shipsLeft = Object.keys(player1.fleet).map(function (arg) { return player1.fleet[arg]; });
     document.querySelectorAll(".grid").forEach(function (grid) {
         grid.className = "grid";
         grid.style.color = "none";
@@ -382,8 +413,9 @@ function restart() {
     document.querySelectorAll(".life").forEach(function (life) {
         life.style.color = "red";
     });
-    if (rotated)
+    if (document.getElementById("shipContainer").style.flexDirection === "row") {
         rotateShip();
+    }
     changeUI("Place your ships");
     document.getElementById("content").style.display = "flex";
     document.getElementById("shipContainer").style.display = "flex";
@@ -451,7 +483,6 @@ function addListeners() {
     restartButton === null || restartButton === void 0 ? void 0 : restartButton.addEventListener("click", restart);
 }
 addListeners();
-// TODO fix AI
 
 
 /***/ })
