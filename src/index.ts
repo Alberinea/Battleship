@@ -1,4 +1,4 @@
-type Player = "player1" | "player2";
+type Player = "player1" | "player2" | "player3";
 
 const container = document.getElementById("shipContainer");
 
@@ -89,11 +89,19 @@ function CreateGameBoard(name: Player) {
       if (
         !rotated &&
         coordinates.some((co) => co % 10 === 0 && co !== coordinates[0])
-      )
+      ) {
         return false;
+      }
       if (rotated && coordinates[0] + count - 10 > 100) return false;
 
       if (coordinates.some((co) => Number.isNaN(parseInt(board[co], 10))))
+        return false;
+
+      if (
+        coordinates.some(
+          (co) => document.getElementById(co.toString())?.innerText === "•"
+        )
+      )
         return false;
 
       coordinates.forEach((co) => {
@@ -246,8 +254,165 @@ function convertEvent(e: Event) {
   return coordinates.toString();
 }
 
-function AIPlay() {
-  // TODO FIX AI 1.PROBABILITY 2.SKEW HITS 3.DISCOVER ENEMY SHIPS ARRAY 4.SUNK ENEMY SHIPS ARRAY 5.FILTER AVAILABLE GRID //PLEASE NO WHILE ANYMORE
+function getProbability(board: string[], shipLeft: any): number[] {
+  const probability = [];
+  const player3 = CreateGameBoard("player3");
+  player3.board = [...board];
+  for (let i = 0; i < board.length; i += 1) {
+    let oddsHorizontal = 0;
+    for (let x = 0; x < shipLeft.length; x += 1) {
+      if (
+        player3.placeFleet(getCoordinates(board[i], shipLeft[x].getHP()), "2")
+      )
+        oddsHorizontal += 1;
+    }
+    if (document.getElementById(i.toString())?.innerText === "•")
+      oddsHorizontal = 0;
+    probability.push(oddsHorizontal);
+  }
+  rotated = true;
+  for (let i = 0; i < board.length; i += 1) {
+    let oddsVertical = 0;
+    for (let x = 0; x < shipLeft.length; x += 1) {
+      if (
+        player3.placeFleet(getCoordinates(board[i], shipLeft[x].getHP()), "2")
+      )
+        oddsVertical += 1;
+    }
+    if (document.getElementById(i.toString())?.innerText === "•")
+      oddsVertical = 0;
+    probability[i] += oddsVertical;
+  }
+  rotated = false;
+  return probability;
+}
+
+function spreadHits(index: number, board: string[]): any {
+  const nearbySpaces = board.reduce(
+    (a, e, i) =>
+      e === (index - 10).toString() ||
+      e === (index + 10).toString() ||
+      e === (index - 1).toString() ||
+      e === (index + 1).toString()
+        ? a.concat(i.toString())
+        : a,
+    []
+  );
+  const random = Math.floor(Math.random() * nearbySpaces.length);
+  if (nearbySpaces.length === 0) {
+    return null;
+  }
+  return nearbySpaces[random];
+}
+
+function focusHits(board: string[], shipName: string) {
+  const damagedShip = board.findIndex((arg) => arg === shipName);
+  return damagedShip;
+}
+
+function getLastMove(index: number) {
+  if (!previousMoves[previousMoves.length - index]) return null;
+  return previousMoves[previousMoves.length - index];
+}
+
+let hunt = false;
+let shipsFound: string[] = [];
+let shipsLeft = Object.keys(player1.fleet).map((arg) => player1.fleet[arg]);
+
+function AIPlay(): string {
+  let move;
+  const freeSpots = player1.board.map((arg) => {
+    if (arg === "-2" || arg === "-3") arg = null;
+    else arg = player1.board.indexOf(arg).toString();
+    return arg;
+  });
+
+  if (player1.fleet[getLastMove(1)?.ship]?.isSunk()) {
+    const indexLeft = shipsLeft
+      .map((arg) => arg.getName())
+      .indexOf(getLastMove(1)?.ship);
+    const indexFound = shipsFound.indexOf(getLastMove(1).ship);
+    shipsLeft.splice(indexLeft, 1);
+    shipsFound.splice(indexFound, 1);
+    if (shipsFound.length === 0) {
+      hunt = false;
+      getLastMove(1).result = "-2";
+    }
+  }
+
+  const highestSpots = Math.max(...getProbability(freeSpots, shipsLeft));
+  const highestProbability: number[] = getProbability(
+    freeSpots,
+    shipsLeft
+  ).reduce((a, e, i) => (e === highestSpots ? a.concat(i) : a), []);
+  const random = Math.floor(Math.random() * highestProbability.length);
+
+  if (!hunt) {
+    move = highestProbability[random];
+  }
+
+  if (getLastMove(1)?.result === "-3") {
+    hunt = true;
+    if (shipsFound.every((ship) => ship !== getLastMove(1).ship))
+      shipsFound.push(getLastMove(1).ship);
+    move = spreadHits(getLastMove(1).index, freeSpots);
+  }
+
+  if (hunt && getLastMove(1)?.result === "-2") {
+    move = spreadHits(getLastMove(2).index, freeSpots);
+  }
+  if (
+    hunt &&
+    getLastMove(1)?.result === "-2" &&
+    getLastMove(2)?.result === "-2"
+  ) {
+    move = spreadHits(getLastMove(3).index, freeSpots);
+  }
+  if (
+    hunt &&
+    getLastMove(1)?.result === "-2" &&
+    getLastMove(2)?.result === "-2" &&
+    getLastMove(3)?.result === "-2"
+  ) {
+    move = spreadHits(getLastMove(4).index, freeSpots);
+  }
+
+  if (
+    hunt &&
+    getLastMove(1)?.result === "-3" &&
+    getLastMove(2)?.result === "-2"
+  ) {
+    move = spreadHits(getLastMove(1).index, freeSpots);
+  }
+  if (
+    hunt &&
+    getLastMove(1)?.result === "-2" &&
+    getLastMove(2)?.result === "-3" &&
+    getLastMove(3)?.result === "-3"
+  )
+    move = focusHits(player1.board, getLastMove(2).ship);
+  if (
+    hunt &&
+    getLastMove(1)?.result === "-3" &&
+    getLastMove(2)?.result === "-3"
+  )
+    move = focusHits(player1.board, getLastMove(1).ship);
+
+  if (move === -1) move = spreadHits(getLastMove(2), freeSpots);
+
+  if (
+    shipsFound.length > 0 &&
+    getLastMove(1)?.result === "-2" &&
+    getLastMove(2)?.result === "-2" &&
+    getLastMove(3)?.result === "-2"
+  )
+    move = focusHits(player1.board, shipsFound[0]);
+
+  if (!move || move === -1) move = highestProbability[random];
+
+  console.log(getProbability(freeSpots, shipsLeft));
+
+  return move.toString();
 }
 
 function playGame(e: Event) {
@@ -263,6 +428,9 @@ function restart() {
   Object.values(player2.fleet).forEach((ship) => ship.fullHeal());
   player1.fleetPlaced = [];
   player2.fleetPlaced = [];
+  hunt = false;
+  shipsFound = [];
+  shipsLeft = Object.keys(player1.fleet).map((arg) => player1.fleet[arg]);
 
   document.querySelectorAll(".grid").forEach((grid: HTMLElement) => {
     grid.className = "grid";
@@ -276,7 +444,9 @@ function restart() {
     life.style.color = "red";
   });
 
-  if (rotated) rotateShip();
+  if (document.getElementById("shipContainer").style.flexDirection === "row") {
+    rotateShip();
+  }
   changeUI("Place your ships");
   document.getElementById("content").style.display = "flex";
   document.getElementById("shipContainer").style.display = "flex";
@@ -350,10 +520,3 @@ function addListeners(): void {
 }
 
 addListeners();
-
-// TODO 1.FILTER AVAILABLE GRID //PLEASE NO WHILE LOOP ANYMORE. ALSO USE EVEN MOVE INSTEAD OF TOTAL RANDOM
-// TODO 2.PROBABILITY //integer per available grids and next hit will be the random highest prob grid unless in hunt mode. calculate based on length vertically and horizontally
-// TODO 3.SKEW HITS //spread hits around when enter hunt mode and exit when all discovered ships are sunk
-// TODO 4.DISCOVER ENEMY SHIPS ARRAY //keep track of the first discovered position so AI can come back if missed and if two ships are discovered at once
-// TODO 5.SUNK ENEMY SHIPS ARRAY //if not equal to discover array then it continues hunt mode at the leftover discovered ship
-// TODO 6.NOT TO MENTION OUT OF BOUNDS OR OVERLAPPING COUNTERMEASURE
