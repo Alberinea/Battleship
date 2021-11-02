@@ -1,6 +1,6 @@
 # [TheOdinProject](https://www.theodinproject.com/)
 
-Project: Battleship
+## Project: Battleship
 
 ![Screenshot](Battleship.png)
 
@@ -19,7 +19,7 @@ Logics inspired by [paulvanderlaken's Beating Battleships with Algorithms and AI
 Clone the repository:
 
 ```bash
-git clone https://github.com/Alberinea/shopping-cart.git
+git clone https://github.com/Alberinea/Battleship.git
 ```
 
 Open the project folder:
