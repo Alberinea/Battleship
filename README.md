@@ -22,6 +22,12 @@ Clone the repository:
 git clone https://github.com/Alberinea/shopping-cart.git
 ```
 
+Open the project folder:
+
+```bash
+cd Batleship
+```
+
 Install all dependencies:
 
 ```bash
@@ -31,7 +37,7 @@ npm i
 Go to dist folder:
 
 ```bash
-cd Battleship/dist
+cd dist
 ```
 
 Open index.html to run the project.
